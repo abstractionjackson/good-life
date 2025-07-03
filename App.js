@@ -10,6 +10,7 @@ import { databaseService } from './src/services/DatabaseService';
 // Import screens
 import ActivityListScreen from './src/screens/ActivityListScreen';
 import AddActivityScreen from './src/screens/AddActivityScreen';
+import ActivityDetailScreen from './src/screens/ActivityDetailScreen';
 import StatsScreen from './src/screens/StatsScreen';
 
 const Tab = createBottomTabNavigator();
@@ -101,6 +102,11 @@ export default function App() {
         <Stack.Screen 
           name="AddActivity" 
           component={AddActivityScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen 
+          name="ActivityDetail" 
+          component={ActivityDetailScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

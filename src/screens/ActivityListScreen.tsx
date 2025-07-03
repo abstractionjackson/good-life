@@ -7,12 +7,18 @@ import {
   StyleSheet,
   RefreshControl,
   TextInput,
+  Alert,
+  Animated,
+  Dimensions,
+  PanResponder,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { databaseService } from '../services/DatabaseService';
 import { Activity } from '../types/Activity';
+
+const { width } = Dimensions.get('window');
 
 interface ActivityListScreenProps {
   navigation: any;
@@ -75,23 +81,145 @@ export default function ActivityListScreen({ navigation }: ActivityListScreenPro
     });
   };
 
-  const renderActivity = ({ item }: { item: Activity }) => (
-    <View style={styles.activityCard}>
-      <View style={styles.activityHeader}>
-        <Text style={styles.activityHandle}>{item.handle}</Text>
-        <Text style={styles.activityDate}>{formatDate(item.committed_on)}</Text>
-      </View>
-      
-      {item.tags.length > 0 && (
-        <View style={styles.tagsContainer}>
-          {item.tags.map((tag, index) => (
-            <View key={index} style={styles.tag}>
-              <Text style={styles.tagText}>{tag}</Text>
-            </View>
-          ))}
+  const handleDeleteActivity = (activityId: string, activityHandle: string) => {
+    Alert.alert(
+      'Delete Activity',
+      `Are you sure you want to delete "${activityHandle}"? This action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => confirmDelete(activityId),
+        },
+      ]
+    );
+  };
+
+  const confirmDelete = async (activityId: string) => {
+    try {
+      const success = await databaseService.deleteActivity(activityId);
+      if (success) {
+        // Refresh the list
+        await loadActivities();
+      } else {
+        Alert.alert('Error', 'Failed to delete activity');
+      }
+    } catch (error) {
+      console.error('Error deleting activity:', error);
+      Alert.alert('Error', 'Failed to delete activity');
+    }
+  };
+
+  const SwipeableActivityItem = ({ item }: { item: Activity }) => {
+    const translateX = new Animated.Value(0);
+    const [isRevealed, setIsRevealed] = useState(false);
+
+    const panResponder = PanResponder.create({
+      onMoveShouldSetPanResponder: (evt, gestureState) => {
+        return Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && Math.abs(gestureState.dx) > 10;
+      },
+      onPanResponderMove: (evt, gestureState) => {
+        // Only allow left swipe (negative values)
+        if (gestureState.dx < 0) {
+          translateX.setValue(Math.max(gestureState.dx, -80));
+        }
+      },
+      onPanResponderRelease: (evt, gestureState) => {
+        if (gestureState.dx < -50) {
+          // Swipe left far enough to reveal delete
+          Animated.timing(translateX, {
+            toValue: -80,
+            duration: 200,
+            useNativeDriver: true,
+          }).start();
+          setIsRevealed(true);
+        } else {
+          // Snap back to original position
+          Animated.timing(translateX, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }).start();
+          setIsRevealed(false);
+        }
+      },
+    });
+
+    const onDelete = () => {
+      handleDeleteActivity(item.id, item.handle);
+      // Reset position after delete
+      Animated.timing(translateX, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+      setIsRevealed(false);
+    };
+
+    const resetPosition = () => {
+      Animated.timing(translateX, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+      setIsRevealed(false);
+    };
+
+    return (
+      <View style={styles.swipeContainer}>
+        <View style={styles.deleteButtonContainer}>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={onDelete}
+          >
+            <Ionicons name="trash" size={20} color="#fff" />
+            <Text style={styles.deleteButtonText}>Delete</Text>
+          </TouchableOpacity>
         </View>
-      )}
-    </View>
+        <Animated.View
+          style={[
+            styles.activityItemContainer,
+            { transform: [{ translateX }] }
+          ]}
+          {...panResponder.panHandlers}
+        >
+          <TouchableOpacity
+            style={styles.activityCard}
+            onPress={() => {
+              if (isRevealed) {
+                resetPosition();
+              } else {
+                navigation.navigate('ActivityDetail', { activityId: item.id });
+              }
+            }}
+          >
+            <View style={styles.activityHeader}>
+              <Text style={styles.activityHandle}>{item.handle}</Text>
+              <Text style={styles.activityDate}>{formatDate(item.committed_on)}</Text>
+            </View>
+            
+            {item.tags.length > 0 && (
+              <View style={styles.tagsContainer}>
+                {item.tags.map((tag, index) => (
+                  <View key={index} style={styles.tag}>
+                    <Text style={styles.tagText}>{tag}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+            
+            <View style={styles.activityFooter}>
+              <Ionicons name="chevron-forward" size={16} color="#ccc" />
+            </View>
+          </TouchableOpacity>
+        </Animated.View>
+      </View>
+    );
+  };
+
+  const renderActivity = ({ item }: { item: Activity }) => (
+    <SwipeableActivityItem item={item} />
   );
 
   return (
@@ -120,6 +248,7 @@ export default function ActivityListScreen({ navigation }: ActivityListScreenPro
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
+        ListHeaderComponent={null}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Ionicons name="leaf-outline" size={64} color="#ccc" />
@@ -191,16 +320,59 @@ const styles = StyleSheet.create({
   listContent: {
     padding: 16,
   },
-  activityCard: {
+  instructionsContainer: {
+    backgroundColor: '#f8f9fa',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    borderLeftWidth: 3,
+    borderLeftColor: '#007AFF',
+  },
+  instructionsText: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  swipeContainer: {
+    position: 'relative',
+    marginBottom: 12,
+  },
+  deleteButtonContainer: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#dc3545',
+    borderRadius: 12,
+  },
+  deleteButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    height: '100%',
+  },
+  deleteButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  activityItemContainer: {
     backgroundColor: '#fff',
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
+  },
+  activityCard: {
+    padding: 16,
+    borderRadius: 12,
   },
   activityHeader: {
     flexDirection: 'row',
@@ -217,6 +389,10 @@ const styles = StyleSheet.create({
   activityDate: {
     fontSize: 14,
     color: '#666',
+  },
+  activityFooter: {
+    alignItems: 'flex-end',
+    marginTop: 8,
   },
   tagsContainer: {
     flexDirection: 'row',
