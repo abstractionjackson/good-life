@@ -1,0 +1,163 @@
+#+TITLE: The Good Life: Virtue Tracker
+#+AUTHOR: 
+#+DATE: 
+
+A mobile app for iOS built with React Native and Expo to help you track your daily virtuous activities and build better habits.
+
+* Features
+
+- *Activity Logging*: Log activities with a unique handle, date, and custom tags
+- *Activity History*: View all your logged activities in a clean, searchable list
+- *Activity Detail View*: Tap activities to view complete details and edit information
+- *Swipe Gestures*: Swipe left on activities to reveal delete option
+- *Statistics*: Track your progress with insights and achievement milestones
+- *Search & Filter*: Find activities by handle or tags
+- *Local Storage*: All data is stored locally on your device using SQLite
+
+* Data Model
+
+Each activity includes:
+- *Handle*: A unique identifier/name for the activity (e.g., "morning_meditation", "daily_exercise")
+- *Committed On*: The date when the activity was performed
+- *Tags*: A list of custom tags to categorize and organize activities
+- *Timestamps*: Automatic creation and update timestamps
+
+* Tech Stack
+
+- *React Native* with *Expo* for cross-platform mobile development
+- *TypeScript* for type safety
+- *SQLite* (expo-sqlite) for local data storage
+- *React Navigation* for app navigation
+- *Expo Vector Icons* for UI icons
+
+* Project Structure
+
+#+BEGIN_SRC
+src/
+├── components/          # Reusable UI components
+├── screens/            # App screens
+│   ├── ActivityListScreen.tsx
+│   ├── AddActivityScreen.tsx
+│   ├── ActivityDetailScreen.tsx
+│   └── StatsScreen.tsx
+├── services/           # Business logic and data services
+│   └── DatabaseService.ts
+└── types/             # TypeScript type definitions
+    └── Activity.ts
+#+END_SRC
+
+* Getting Started
+
+** Prerequisites
+
+- Node.js (v16 or later)
+- npm or yarn
+- Expo CLI (~npm install -g @expo/cli~)
+- iOS Simulator (Xcode) or physical iOS device with Expo Go app
+
+** Installation
+
+1. Clone the repository
+2. Install dependencies:
+   #+BEGIN_SRC bash
+   npm install
+   #+END_SRC
+
+3. Start the development server:
+   #+BEGIN_SRC bash
+   npm start
+   #+END_SRC
+
+4. Run on iOS:
+   - Press ~i~ to open in iOS Simulator
+   - Or scan the QR code with your iPhone camera to open in Expo Go
+
+** Build Commands
+
+- ~npm start~ - Start the Expo development server
+- ~npm run ios~ - Start and open in iOS Simulator
+- ~npm run android~ - Start and open in Android Simulator
+- ~npm run web~ - Start and open in web browser
+
+* Usage
+
+#+CAPTION: Example of the Activity List screen
+[[file:assets/activity_list.jpeg]]
+
+** Adding Activities
+
+1. Tap the "+" button on the main screen
+2. Enter a handle for your activity (e.g., "morning_run", "read_philosophy")
+3. Select or enter the date when you performed the activity
+4. Add relevant tags (e.g., "exercise", "health", "learning")
+5. Tap "Save Activity"
+
+** Viewing Activity Details
+
+- Tap any activity in the list to view complete details
+- In detail view, tap the pencil icon to edit activity information
+- Tap the trash icon to delete the activity
+- Use the back arrow to return to the activity list
+
+** Managing Activities
+
+- *View Details*: Tap any activity to see full information
+- *Edit Activities*: In detail view, tap pencil icon to modify handle, date, or tags
+- *Delete Activities*: Swipe left on activities to reveal delete button, or use trash icon in detail view
+- *Search Activities*: Use the search bar to find activities by handle or tags
+
+** Viewing Statistics
+
+Navigate to the "Stats" tab to see:
+- Total activities logged
+- Weekly and monthly activity counts
+- Current activity streak
+- Most popular tags
+- Achievement milestones
+
+** Searching Activities
+
+- Use the search bar on the main screen to find activities by handle or tags
+- Results update in real-time as you type
+
+* Database Schema
+
+The app uses SQLite with the following table structure:
+
+#+BEGIN_SRC sql
+CREATE TABLE activities (
+  id TEXT PRIMARY KEY,
+  handle TEXT NOT NULL,
+  committed_on TEXT NOT NULL,
+  tags TEXT NOT NULL,  -- JSON array of strings
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+#+END_SRC
+
+* App Navigation
+
+The app uses a tab-based navigation with the following structure:
+
+- *Activities Tab*: Main list of all logged activities
+  - Tap activities to view details
+  - Swipe left to delete
+  - Search and filter functionality
+  - Floating action button to add new activities
+  
+- *Stats Tab*: Progress tracking and insights
+  - Activity counts and streaks
+  - Tag popularity statistics
+  - Achievement milestones
+
+- *Modal Screens*:
+  - Add Activity: Form to log new activities
+  - Activity Detail: View and edit individual activities
+
+* Contributing
+
+This is a personal virtue tracking app, but feel free to fork and adapt it for your own use!
+
+* License
+
+MIT License - feel free to use this project as a foundation for your own virtue tracking app.
