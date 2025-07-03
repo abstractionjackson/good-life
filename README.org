@@ -82,7 +82,7 @@ src/
 * Usage
 
 #+CAPTION: Example of the Activity List screen
-[[file:https://github.com/abstractionjackson/good-life/blob/master/assets/activity_list.jpeg?raw=true]]
+[[https://github.com/abstractionjackson/good-life/blob/master/assets/activity_list.jpeg?raw=true]]
 
 ** Adding Activities
 
